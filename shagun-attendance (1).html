@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Attendance Tracker</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* ---------- COLORS (Google colors!) ---------- */
+    :root {
+      --blue: #4285f4;
+      --green: #34a853;
+      --yellow: #fbbc05;
+      --red: #ea4335;
+      --bg: #f2f6ff;
+      --card: #ffffff;
+      --text: #1b2333;
+      --muted: #74809a;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      font-family: "Poppins", system-ui, sans-serif;
+      background: var(--bg);
+      margin: 0;
+      color: var(--text);
+    }
+
+    /* ---------- HEADER ---------- */
+    .header {
+      background: linear-gradient(135deg, var(--blue), #34a0f4 60%, var(--green));
+      color: white;
+      padding: 32px 20px 80px;
+      text-align: center;
+    }
+    .header h1 { margin: 0; font-size: 28px; }
+    .header p { margin: 6px 0 0; opacity: 0.9; }
+
+    .container {
+      max-width: 640px;
+      margin: -60px auto 40px;
+      padding: 0 16px;
+    }
+
+    /* ---------- SUMMARY BOXES ---------- */
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .stat {
+      background: var(--card);
+      border-radius: 16px;
+      padding: 14px 8px;
+      text-align: center;
+      box-shadow: 0 6px 20px rgba(66, 133, 244, 0.12);
+    }
+    .stat-number { font-size: 24px; font-weight: 700; color: var(--blue); }
+    .stat-label { font-size: 12px; color: var(--muted); }
+    .stat-number.good { color: var(--green); }
+    .stat-number.bad { color: var(--red); }
+
+    /* ---------- ADD SUBJECT ---------- */
+    .add-box {
+      background: var(--card);
+      border-radius: 16px;
+      padding: 14px;
+      margin-bottom: 20px;
+      box-shadow: 0 6px 20px rgba(66, 133, 244, 0.12);
+      display: flex;
+      gap: 8px;
+    }
+    .add-box input {
+      flex: 1;
+      padding: 12px;
+      border: 2px solid #e6ecf8;
+      border-radius: 10px;
+      font-size: 15px;
+      font-family: inherit;
+      min-width: 0;
+    }
+    .add-box input:focus { outline: none; border-color: var(--blue); }
+
+    button {
+      border: none;
+      border-radius: 10px;
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      padding: 10px 14px;
+      transition: transform 0.1s, opacity 0.2s;
+    }
+    button:hover { opacity: 0.9; }
+    button:active { transform: scale(0.95); }
+    .btn-add { background: var(--blue); color: white; padding: 12px 20px; }
+    .btn-present { background: var(--green); color: white; }
+    .btn-absent { background: var(--red); color: white; }
+    .btn-delete { background: #f1f3f7; color: var(--muted); }
+    .btn-undo {
+      display: block;
+      margin: 0 auto 16px;
+      background: white;
+      color: var(--blue);
+      box-shadow: 0 3px 10px rgba(0,0,0,0.06);
+    }
+
+    /* ---------- SUBJECT CARDS ---------- */
+    .card {
+      background: var(--card);
+      border-radius: 16px;
+      padding: 18px;
+      margin-bottom: 14px;
+      box-shadow: 0 6px 20px rgba(66, 133, 244, 0.10);
+      display: flex;
+      gap: 18px;
+      align-items: center;
+      animation: pop 0.3s ease;
+    }
+    @keyframes pop {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* The circular percentage ring */
+    .ring {
+      --percent: 0;
+      --color: var(--green);
+      min-width: 88px;
+      height: 88px;
+      border-radius: 50%;
+      background: conic-gradient(var(--color) calc(var(--percent) * 1%), #edf0f6 0);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.4s;
+    }
+    .ring-inner {
+      width: 70px;
+      height: 70px;
+      border-radius: 50%;
+      background: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 17px;
+      color: var(--color);
+    }
+
+    .info { flex: 1; min-width: 0; }
+    .info h2 { margin: 0; font-size: 19px; }
+    .stats-line { color: var(--muted); font-size: 13px; margin: 2px 0 8px; }
+
+    .badge {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 20px;
+      margin-left: 6px;
+      vertical-align: middle;
+    }
+    .badge.safe { background: #e6f6ea; color: var(--green); }
+    .badge.edge { background: #fff6dc; color: #b8860b; }
+    .badge.risk { background: #fde8e6; color: var(--red); }
+
+    .message { font-size: 14px; font-weight: 500; margin-bottom: 12px; }
+    .buttons { display: flex; gap: 8px; flex-wrap: wrap; }
+
+    .empty {
+      text-align: center;
+      color: var(--muted);
+      padding: 30px;
+      background: var(--card);
+      border-radius: 16px;
+    }
+    .empty .icon { font-size: 40px; }
+
+    /* ---------- PHONE SCREENS ---------- */
+    @media (max-width: 480px) {
+      .card { flex-direction: column; align-items: flex-start; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Colorful header -->
+  <div class="header">
+    <h1>📚 Shagun's Attendance Tracker</h1>
+    <p>Stay above 75%. Skip smart, not blindly 😎</p>
+  </div>
+
+  <div class="container">
+    <!-- Summary: subjects, overall %, subjects at risk -->
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-number" id="statSubjects">0</div>
+        <div class="stat-label">Subjects</div>
+      </div>
+      <div class="stat">
+        <div class="stat-number" id="statOverall">–</div>
+        <div class="stat-label">Overall</div>
+      </div>
+      <div class="stat">
+        <div class="stat-number" id="statRisk">0</div>
+        <div class="stat-label">At risk</div>
+      </div>
+    </div>
+
+    <!-- Input to add a new subject -->
+    <div class="add-box">
+      <input id="subjectInput" type="text" placeholder="Add a subject (e.g. Maths)">
+      <button class="btn-add" onclick="addSubject()">Add</button>
+    </div>
+
+    <!-- Undo button (only shows after you mark something) -->
+    <button class="btn-undo" id="undoBtn" onclick="undo()" style="display:none">↩ Undo last mark</button>
+
+    <!-- Subject cards get drawn here by JavaScript -->
+    <div id="subjectList"></div>
+  </div>
+
+  <script>
+    // ---------- DATA ----------
+    // Each subject looks like: { name: "Maths", present: 10, total: 12 }
+    const REQUIRED = 75; // minimum attendance % needed
+    let subjects = loadSubjects();
+
+    // History of marks, used for Undo. It works like a STACK:
+    // the last thing pushed in is the first thing taken out.
+    let history = [];
+
+    // ---------- SAVE / LOAD (browser storage) ----------
+    function saveSubjects() {
+      try {
+        localStorage.setItem("subjects", JSON.stringify(subjects));
+      } catch (e) {
+        console.log("Could not save:", e);
+      }
+    }
+
+    function loadSubjects() {
+      try {
+        const data = localStorage.getItem("subjects");
+        return data ? JSON.parse(data) : [];
+      } catch (e) {
+        return [];
+      }
+    }
+
+    // ---------- ACTIONS ----------
+    function addSubject() {
+      const input = document.getElementById("subjectInput");
+      const name = input.value.trim();
+      if (name === "") {
+        alert("Please type a subject name");
+        return;
+      }
+      subjects.push({ name: name, present: 0, total: 0 });
+      input.value = "";
+      saveSubjects();
+      render();
+    }
+
+    function markPresent(index) {
+      subjects[index].present++;
+      subjects[index].total++;
+      history.push({ index: index, wasPresent: true });
+      saveSubjects();
+      render();
+    }
+
+    function markAbsent(index) {
+      subjects[index].total++;
+      history.push({ index: index, wasPresent: false });
+      saveSubjects();
+      render();
+    }
+
+    function undo() {
+      const last = history.pop(); // take the most recent mark
+      if (!last || !subjects[last.index]) return;
+      subjects[last.index].total--;
+      if (last.wasPresent) subjects[last.index].present--;
+      saveSubjects();
+      render();
+    }
+
+    function deleteSubject(index) {
+      if (confirm("Delete " + subjects[index].name + "?")) {
+        subjects.splice(index, 1);
+        history = []; // positions changed, so clear undo history
+        saveSubjects();
+        render();
+      }
+    }
+
+    // ---------- THE SMART PART: skip / attend calculation ----------
+    // Rule: present / total must stay >= 75%
+    function getStatus(present, total) {
+      if (total === 0) {
+        return { text: "No classes yet. Start marking!", badge: "", level: "safe" };
+      }
+
+      // How many classes can I skip and still be >= 75%?
+      //   present / (total + skip) >= 0.75  →  skip <= (4*present - 3*total) / 3
+      const canSkip = Math.floor((4 * present - 3 * total) / 3);
+
+      if (canSkip > 0) {
+        return {
+          text: "😎 You can skip " + canSkip + " more class" + (canSkip > 1 ? "es" : ""),
+          badge: '<span class="badge safe">SAFE</span>',
+          level: "safe"
+        };
+      } else if (canSkip === 0) {
+        return {
+          text: "⚠️ Right at the edge. Don't skip the next class!",
+          badge: '<span class="badge edge">EDGE</span>',
+          level: "edge"
+        };
+      } else {
+        // How many classes in a row must I attend to reach 75%?
+        //   (present + n) / (total + n) >= 0.75  →  n >= 3*total - 4*present
+        const mustAttend = 3 * total - 4 * present;
+        return {
+          text: "🚨 Attend the next " + mustAttend + " class" + (mustAttend > 1 ? "es" : "") + " to reach 75%",
+          badge: '<span class="badge risk">AT RISK</span>',
+          level: "risk"
+        };
+      }
+    }
+
+    // ---------- SUMMARY AT THE TOP ----------
+    function renderStats() {
+      let allPresent = 0, allTotal = 0, atRisk = 0;
+      subjects.forEach(function (s) {
+        allPresent += s.present;
+        allTotal += s.total;
+        if (s.total > 0 && (s.present / s.total) * 100 < REQUIRED) atRisk++;
+      });
+
+      document.getElementById("statSubjects").textContent = subjects.length;
+
+      const overall = document.getElementById("statOverall");
+      if (allTotal === 0) {
+        overall.textContent = "–";
+        overall.className = "stat-number";
+      } else {
+        const pct = (allPresent / allTotal) * 100;
+        overall.textContent = Math.round(pct) + "%";
+        overall.className = "stat-number " + (pct >= REQUIRED ? "good" : "bad");
+      }
+
+      const risk = document.getElementById("statRisk");
+      risk.textContent = atRisk;
+      risk.className = "stat-number " + (atRisk > 0 ? "bad" : "good");
+
+      document.getElementById("undoBtn").style.display = history.length > 0 ? "block" : "none";
+    }
+
+    // ---------- DRAW EVERYTHING ON SCREEN ----------
+    function render() {
+      renderStats();
+      const list = document.getElementById("subjectList");
+
+      if (subjects.length === 0) {
+        list.innerHTML = '<div class="empty"><div class="icon">📭</div>No subjects yet. Add one above!</div>';
+        return;
+      }
+
+      list.innerHTML = "";
+      subjects.forEach(function (s, i) {
+        const percent = s.total === 0 ? 0 : (s.present / s.total) * 100;
+        const status = getStatus(s.present, s.total);
+
+        let color = "var(--green)";
+        if (status.level === "edge") color = "var(--yellow)";
+        if (status.level === "risk") color = "var(--red)";
+
+        list.innerHTML += `
+          <div class="card">
+            <div class="ring" style="--percent:${percent}; --color:${color}">
+              <div class="ring-inner">${s.total === 0 ? "–" : Math.round(percent) + "%"}</div>
+            </div>
+            <div class="info">
+              <h2>${escapeHTML(s.name)}${status.badge}</h2>
+              <div class="stats-line">Attended ${s.present} of ${s.total} classes</div>
+              <div class="message">${status.text}</div>
+              <div class="buttons">
+                <button class="btn-present" onclick="markPresent(${i})">✅ Present</button>
+                <button class="btn-absent" onclick="markAbsent(${i})">❌ Absent</button>
+                <button class="btn-delete" onclick="deleteSubject(${i})">🗑</button>
+              </div>
+            </div>
+          </div>
+        `;
+      });
+    }
+
+    // Stops weird input (like <script>) from breaking the page
+    function escapeHTML(text) {
+      const div = document.createElement("div");
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // Press Enter to add a subject
+    document.getElementById("subjectInput").addEventListener("keydown", function (e) {
+      if (e.key === "Enter") addSubject();
+    });
+
+    // Draw the page when it first loads
+    render();
+  </script>
+</body>
+</html>

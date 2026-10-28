@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Exam Countdown</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* ---------- COLORS (change these to change the whole theme) ---------- */
+    :root {
+      --purple: #6c4cf5;
+      --pink: #e94ba8;
+      --green: #22c55e;
+      --red: #ef4444;
+      --orange: #f59e0b;
+      --bg: #f5f3ff;
+      --card: #ffffff;
+      --text: #1f1b2e;
+      --muted: #7a7590;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      font-family: "Poppins", system-ui, sans-serif;
+      background: var(--bg);
+      margin: 0;
+      color: var(--text);
+    }
+
+    /* ---------- HEADER ---------- */
+    .header {
+      background: linear-gradient(135deg, var(--purple), var(--pink));
+      color: white;
+      padding: 32px 20px 80px;
+      text-align: center;
+    }
+    .header h1 { margin: 0; font-size: 30px; }
+    .header p { margin: 6px 0 0; opacity: 0.9; }
+
+    .container {
+      max-width: 640px;
+      margin: -60px auto 40px;
+      padding: 0 16px;
+    }
+
+    /* ---------- SUMMARY BOXES ---------- */
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .stat {
+      background: var(--card);
+      border-radius: 16px;
+      padding: 14px 8px;
+      text-align: center;
+      box-shadow: 0 6px 20px rgba(108, 76, 245, 0.12);
+    }
+    .stat-number { font-size: 24px; font-weight: 700; color: var(--purple); }
+    .stat-label { font-size: 12px; color: var(--muted); }
+
+    /* ---------- TODAY'S GOAL BANNER ---------- */
+    .goal {
+      background: var(--text);
+      color: white;
+      border-radius: 16px;
+      padding: 14px 18px;
+      margin-bottom: 16px;
+      font-weight: 500;
+    }
+
+    /* ---------- ADD EXAM FORM ---------- */
+    .add-box {
+      background: var(--card);
+      border-radius: 16px;
+      padding: 18px;
+      margin-bottom: 20px;
+      box-shadow: 0 6px 20px rgba(108, 76, 245, 0.12);
+    }
+    .add-box h3 { margin: 0 0 12px; }
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .field { display: flex; flex-direction: column; gap: 4px; }
+    .field.full { grid-column: 1 / -1; }
+    .field label { font-size: 13px; color: var(--muted); }
+    .field input {
+      padding: 11px;
+      border: 2px solid #ece9f7;
+      border-radius: 10px;
+      font-size: 15px;
+      font-family: inherit;
+    }
+    .field input:focus { outline: none; border-color: var(--purple); }
+
+    button {
+      border: none;
+      border-radius: 10px;
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      padding: 10px 14px;
+      transition: transform 0.1s, opacity 0.2s;
+    }
+    button:hover { opacity: 0.9; }
+    button:active { transform: scale(0.96); }
+    .btn-add {
+      width: 100%;
+      margin-top: 14px;
+      padding: 13px;
+      font-size: 16px;
+      color: white;
+      background: linear-gradient(135deg, var(--purple), var(--pink));
+    }
+    .btn-done { background: var(--green); color: white; }
+    .btn-undo { background: #f1eefc; color: var(--purple); }
+    .btn-delete { background: #f3f3f3; color: var(--muted); }
+
+    /* ---------- EXAM CARDS ---------- */
+    .card {
+      background: var(--card);
+      border-radius: 16px;
+      padding: 18px;
+      margin-bottom: 14px;
+      box-shadow: 0 6px 20px rgba(108, 76, 245, 0.10);
+      display: flex;
+      gap: 16px;
+      animation: pop 0.3s ease;
+    }
+    @keyframes pop {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* The circle on the left that shows days left */
+    .countdown {
+      min-width: 76px;
+      height: 76px;
+      border-radius: 50%;
+      background: #f1eefc;
+      color: var(--purple);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    .countdown .big { font-size: 26px; font-weight: 700; line-height: 1; }
+    .countdown .small { font-size: 11px; }
+    .card.urgent .countdown { background: #fde8e8; color: var(--red); }
+    .card.over { opacity: 0.55; }
+    .card.over .countdown { background: #eee; color: var(--muted); }
+    .card.finished .countdown { background: #e6f9ee; color: var(--green); }
+
+    .info { flex: 1; min-width: 0; }
+    .info h2 { margin: 0; font-size: 19px; }
+    .date { color: var(--muted); font-size: 13px; margin-bottom: 8px; }
+
+    .badge {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 20px;
+      margin-left: 6px;
+      vertical-align: middle;
+    }
+    .badge.urgent { background: #fde8e8; color: var(--red); }
+    .badge.done { background: #e6f9ee; color: var(--green); }
+
+    .progress-text { font-size: 13px; color: var(--muted); }
+    .progress-bar {
+      background: #f1eefc;
+      border-radius: 10px;
+      height: 10px;
+      overflow: hidden;
+      margin: 5px 0 10px;
+    }
+    .progress-fill {
+      height: 100%;
+      border-radius: 10px;
+      background: linear-gradient(90deg, var(--purple), var(--pink));
+      transition: width 0.4s ease;
+    }
+    .plan { font-size: 14px; font-weight: 500; margin-bottom: 12px; }
+    .buttons { display: flex; gap: 8px; flex-wrap: wrap; }
+
+    .empty {
+      text-align: center;
+      color: var(--muted);
+      padding: 30px;
+      background: var(--card);
+      border-radius: 16px;
+    }
+    .empty .icon { font-size: 40px; }
+
+    /* ---------- PHONE SCREENS ---------- */
+    @media (max-width: 480px) {
+      .form-row { grid-template-columns: 1fr; }
+      .card { flex-direction: column; align-items: flex-start; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Colorful header -->
+  <div class="header">
+    <h1>📅 Exam Countdown</h1>
+    <p id="quote"></p>
+  </div>
+
+  <div class="container">
+    <!-- Summary: total exams, next exam, overall progress -->
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-number" id="statExams">0</div>
+        <div class="stat-label">Exams</div>
+      </div>
+      <div class="stat">
+        <div class="stat-number" id="statNext">–</div>
+        <div class="stat-label">Days to next</div>
+      </div>
+      <div class="stat">
+        <div class="stat-number" id="statProgress">0%</div>
+        <div class="stat-label">Overall done</div>
+      </div>
+    </div>
+
+    <!-- Today's goal -->
+    <div class="goal" id="goal">🎯 Add your first exam to get a study plan</div>
+
+    <!-- Form to add a new exam -->
+    <div class="add-box">
+      <h3>➕ Add an exam</h3>
+      <div class="form-row">
+        <div class="field full">
+          <label>Subject</label>
+          <input id="subjectInput" type="text" placeholder="e.g. Maths">
+        </div>
+        <div class="field">
+          <label>Exam date</label>
+          <input id="dateInput" type="date">
+        </div>
+        <div class="field">
+          <label>Topics to study</label>
+          <input id="topicsInput" type="number" min="1" placeholder="e.g. 10">
+        </div>
+      </div>
+      <button class="btn-add" onclick="addExam()">Add Exam</button>
+    </div>
+
+    <!-- Exam cards get drawn here by JavaScript -->
+    <div id="examList"></div>
+  </div>
+
+  <script>
+    // ---------- DATA ----------
+    // Each exam looks like: { subject: "Maths", date: "2026-11-20", topics: 10, done: 3 }
+    let exams = loadExams();
+
+    // ---------- MOTIVATION QUOTES (one random quote each time) ----------
+    const QUOTES = [
+      "Small steps every day lead to big results 🚀",
+      "You don't have to be perfect, just consistent 💪",
+      "One topic at a time. You've got this ✨",
+      "Future you will thank you for studying today 📚"
+    ];
+    document.getElementById("quote").textContent =
+      QUOTES[Math.floor(Math.random() * QUOTES.length)];
+
+    // ---------- SAVE / LOAD (browser storage) ----------
+    function saveExams() {
+      try {
+        localStorage.setItem("exams", JSON.stringify(exams));
+      } catch (e) {
+        console.log("Could not save:", e);
+      }
+    }
+
+    function loadExams() {
+      try {
+        const data = localStorage.getItem("exams");
+        return data ? JSON.parse(data) : [];
+      } catch (e) {
+        return [];
+      }
+    }
+
+    // ---------- ACTIONS ----------
+    function addExam() {
+      const subject = document.getElementById("subjectInput").value.trim();
+      const date = document.getElementById("dateInput").value;
+      const topics = parseInt(document.getElementById("topicsInput").value);
+
+      if (subject === "" || date === "" || !topics || topics < 1) {
+        alert("Please fill in subject, date and number of topics");
+        return;
+      }
+
+      exams.push({ subject: subject, date: date, topics: topics, done: 0 });
+      saveExams();
+      render();
+
+      // Clear the form
+      document.getElementById("subjectInput").value = "";
+      document.getElementById("dateInput").value = "";
+      document.getElementById("topicsInput").value = "";
+    }
+
+    function topicDone(index) {
+      if (exams[index].done < exams[index].topics) {
+        exams[index].done++;
+        saveExams();
+        render();
+      }
+    }
+
+    function undoTopic(index) {
+      if (exams[index].done > 0) {
+        exams[index].done--;
+        saveExams();
+        render();
+      }
+    }
+
+    function deleteExam(index) {
+      if (confirm("Delete " + exams[index].subject + "?")) {
+        exams.splice(index, 1);
+        saveExams();
+        render();
+      }
+    }
+
+    // ---------- THE SMART PART: days left + daily plan ----------
+    function getDaysLeft(dateText) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);                    // start of today
+      const exam = new Date(dateText + "T00:00:00"); // start of exam day
+      const oneDay = 1000 * 60 * 60 * 24;            // milliseconds in a day
+      return Math.round((exam - today) / oneDay);
+    }
+
+    function getTopicsPerDay(daysLeft, remaining) {
+      if (daysLeft <= 0 || remaining === 0) return 0;
+      return Math.ceil(remaining / daysLeft); // spread topics evenly over days left
+    }
+
+    function getPlan(daysLeft, remaining) {
+      if (remaining === 0) return "🎉 All topics done! Just revise now.";
+      if (daysLeft < 0) return "This exam is over.";
+      if (daysLeft === 0) return "🚨 Exam is TODAY! Quick revision only.";
+      const perDay = getTopicsPerDay(daysLeft, remaining);
+      return "📖 Study " + perDay + " topic" + (perDay > 1 ? "s" : "") + " per day to finish on time";
+    }
+
+    // ---------- SUMMARY AT THE TOP ----------
+    function renderStats() {
+      let totalTopics = 0, totalDone = 0, nearest = null, todayGoal = 0;
+
+      exams.forEach(function (e) {
+        const daysLeft = getDaysLeft(e.date);
+        totalTopics += e.topics;
+        totalDone += e.done;
+        if (daysLeft >= 0 && (nearest === null || daysLeft < nearest)) nearest = daysLeft;
+        todayGoal += getTopicsPerDay(daysLeft, e.topics - e.done);
+      });
+
+      document.getElementById("statExams").textContent = exams.length;
+      document.getElementById("statNext").textContent = nearest === null ? "–" : nearest;
+      document.getElementById("statProgress").textContent =
+        totalTopics === 0 ? "0%" : Math.round((totalDone / totalTopics) * 100) + "%";
+
+      let goalText;
+      if (exams.length === 0) goalText = "🎯 Add your first exam to get a study plan";
+      else if (todayGoal === 0) goalText = "🎯 Nothing pending today. Revise and relax!";
+      else goalText = "🎯 Today's goal: finish " + todayGoal + " topic" + (todayGoal > 1 ? "s" : "") + " across all exams";
+      document.getElementById("goal").textContent = goalText;
+    }
+
+    // ---------- DRAW EVERYTHING ON SCREEN ----------
+    function render() {
+      renderStats();
+      const list = document.getElementById("examList");
+
+      if (exams.length === 0) {
+        list.innerHTML = '<div class="empty"><div class="icon">📭</div>No exams yet. Add one above!</div>';
+        return;
+      }
+
+      // Sort so the nearest exam comes first
+      const order = exams
+        .map(function (exam, index) { return { exam: exam, index: index }; })
+        .sort(function (a, b) { return getDaysLeft(a.exam.date) - getDaysLeft(b.exam.date); });
+
+      list.innerHTML = "";
+      order.forEach(function (item) {
+        const e = item.exam;
+        const i = item.index;
+        const daysLeft = getDaysLeft(e.date);
+        const remaining = e.topics - e.done;
+        const percent = Math.round((e.done / e.topics) * 100);
+
+        // Decide the look of the card
+        let cardClass = "card";
+        let badge = "";
+        let big, small;
+        if (daysLeft < 0) { cardClass += " over"; big = "✓"; small = "over"; }
+        else if (daysLeft === 0) { cardClass += " urgent"; big = "0"; small = "TODAY"; }
+        else { big = daysLeft; small = daysLeft === 1 ? "day left" : "days left"; }
+
+        if (remaining === 0) { cardClass += " finished"; badge = '<span class="badge done">READY</span>'; }
+        else if (daysLeft >= 0 && daysLeft <= 3) { cardClass += " urgent"; badge = '<span class="badge urgent">URGENT</span>'; }
+
+        const niceDate = new Date(e.date + "T00:00:00")
+          .toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short", year: "numeric" });
+
+        list.innerHTML += `
+          <div class="${cardClass}">
+            <div class="countdown">
+              <div class="big">${big}</div>
+              <div class="small">${small}</div>
+            </div>
+            <div class="info">
+              <h2>${escapeHTML(e.subject)}${badge}</h2>
+              <div class="date">${niceDate}</div>
+              <div class="progress-text">${e.done} of ${e.topics} topics done (${percent}%)</div>
+              <div class="progress-bar"><div class="progress-fill" style="width:${percent}%"></div></div>
+              <div class="plan">${getPlan(daysLeft, remaining)}</div>
+              <div class="buttons">
+                <button class="btn-done" onclick="topicDone(${i})">✅ Topic done</button>
+                <button class="btn-undo" onclick="undoTopic(${i})">↩ Undo</button>
+                <button class="btn-delete" onclick="deleteExam(${i})">🗑 Delete</button>
+              </div>
+            </div>
+          </div>
+        `;
+      });
+    }
+
+    // Stops weird input (like <script>) from breaking the page
+    function escapeHTML(text) {
+      const div = document.createElement("div");
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // Press Enter in any box to add the exam
+    ["subjectInput", "dateInput", "topicsInput"].forEach(function (id) {
+      document.getElementById(id).addEventListener("keydown", function (e) {
+        if (e.key === "Enter") addExam();
+      });
+    });
+
+    // Draw the page when it first loads
+    render();
+  </script>
+</body>
+</html>
